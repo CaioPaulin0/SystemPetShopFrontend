@@ -1,0 +1,61 @@
+form .formToggleHeading {
+  margin: 0;
+}
+
+.formToggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: #0f766e;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 16px;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.formToggle:hover {
+  color: #115e59;
+}
+
+.formToggle:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.25);
+  outline-offset: 4px;
+}
+
+.formToggleIcon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.formCollapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.5s ease, opacity 0.5s ease;
+}
+
+.formCollapse.isExpanded {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.formCollapseContent {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.formCollapseBody {
+  padding-top: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .formCollapse {
+    transition: none;
+  }
+}

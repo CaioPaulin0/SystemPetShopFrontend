@@ -1,0 +1,458 @@
+<ng-container *ngIf="arrayProduct$ | async as arrayProduct; else loadingState">
+  <section class="productSection" aria-labelledby="productTitle">
+    <header class="productHeader">
+      <div>
+        <button type="button" class="backButton" (click)="goBack()">
+          <img src="/assets/esquerda.png" alt="seta para voltar"> Voltar para marcas
+        </button>
+        <span class="productEyebrow">Produtos</span>
+        <h2 id="productTitle">Produtos da marca - {{ brandName || 'Não informado' }}</h2>
+        <p class="contextId">Distribuidora selecionada: {{ distributorName || 'Não informado' }}</p>
+      </div>
+
+      <span class="productCount">
+        {{ arrayProduct.length }}
+        {{ arrayProduct.length === 1 ? 'produto' : 'produtos' }}
+      </span>
+    </header>
+
+    <p class="feedback feedbackError" *ngIf="hasLoadError">
+      Não foi possível carregar os produtos desta marca.
+      <button type="button" (click)="loadProducts(requestedPage)">Tentar novamente</button>
+    </p>
+
+    <p class="feedback feedbackError" *ngIf="hasDeleteError">
+      Não foi possível deletar o produto. Verifique se ele possui um ID válido.
+    </p>
+
+    <p class="feedback feedbackError" *ngIf="hasEditError">
+      Não foi possível salvar as alterações do produto.
+    </p>
+
+    <p class="feedback feedbackSuccess" *ngIf="deleteResponseMessage !== null">
+      {{ deleteResponseMessage }}
+    </p>
+
+
+    <div class="listToolbar">
+      <div class="formField searchField">
+        <label for="productSearch">Buscar produto pelo nome</label>
+        <div class="searchControls">
+          <input id="productSearch" type="search" name="productSearch"
+            placeholder="Nome do produto"
+            [ngModel]="searchTerm" (ngModelChange)="updateSearchTerm($event)"
+            (keydown.enter)="searchProducts()" />
+          <button type="button" class="searchButton"
+            (click)="searchProducts()" [disabled]="isLoadingPage || !searchTerm.trim()">Buscar</button>
+        </div>
+      </div>
+
+      <!--
+        <label class="formField typeFilter">
+          <span>Tipo do produto</span>
+          <select name="productTypeFilter" [(ngModel)]="selectedType" (ngModelChange)="applyFilters()">
+            <option value="">Todos os tipos</option>
+            <option *ngFor="let type of productTypes" [value]="type">{{ type }}</option>
+          </select>
+        </label> 
+      -->
+
+      <div class="viewToggle" role="group" aria-label="Visualização de produtos">
+        <button type="button" [attr.aria-pressed]="viewMode === 'grid'" (click)="setViewMode('grid')">
+          <img src="/assets/grade.png" alt="grade icone">
+        </button>
+        <button type="button" [attr.aria-pressed]="viewMode === 'list'" (click)="setViewMode('list')">
+          <img src="/assets/lista.png" alt="grade lista">
+        </button>
+      </div>
+    </div>
+
+    <p class="feedback productSearcFeedback" *ngIf="searchEmpty" role="status">
+      Nenhum resultado encontrado com esse nome. A lista anterior foi mantida.
+    </p>
+    <p class="feedback" *ngIf="isLoadingPage" role="status">Carregando...</p>
+
+    <div class="filterSummary" *ngIf="!hasLoadError">
+      <button type="button" class="clearFilters" *ngIf="searchTerm || selectedType" (click)="clearFilters()">
+        Limpar filtros
+      </button>
+    </div>
+
+    <form class="productForm" (ngSubmit)="saveProduct()" #formProduct="ngForm">
+      <h3 class="formToggleHeading">
+        <button
+          type="button"
+          class="formToggle"
+          (click)="toggleForm()"
+          [attr.aria-expanded]="isFormExpanded"
+          aria-controls="productFormContent"
+        >
+          <span>{{ isFormExpanded ? 'Recolher cadastro de produto' : 'Adicionar produto' }}</span>
+          <span class="formToggleIcon" aria-hidden="true">{{ isFormExpanded ? '−' : '+' }}</span>
+        </button>
+      </h3>
+
+      <div
+        id="productFormContent"
+        class="formCollapse"
+        [class.isExpanded]="isFormExpanded"
+        [attr.inert]="isFormExpanded ? null : ''"
+        [attr.aria-hidden]="!isFormExpanded"
+      >
+        <div class="formCollapseContent">
+          <div class="formCollapseBody">
+            <section class="imageScanPanel" aria-labelledby="imageScanTitle">
+              <div class="imageScanHeader">
+                <div>
+                  <span class="fieldLabel">Cadastro por imagem</span>
+                  <h4 id="imageScanTitle">Preencha os dados usando imagens do produto</h4>
+                  <p class="imageScanDescription">
+                    Adicione uma ou mais imagens e envie para identificar automaticamente as informações.
+                  </p>
+                </div>
+
+                <input
+                  #productImageInput
+                  hidden
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  (change)="onImagesSelected($event)"
+                  [disabled]="isScanningImages"
+                />
+              </div>
+
+              <div class="imageScanPreviewArea" [attr.aria-busy]="isScanningImages">
+                <div class="imageScanLoading" *ngIf="isScanningImages" role="status" aria-live="polite">
+                  <span class="loadingSpinner" aria-hidden="true"></span>
+                  <span>Analisando as imagens e preenchendo o formulário...</span>
+                </div>
+
+                <ng-container *ngIf="!isScanningImages">
+                  <div class="imagePreviewGrid" *ngIf="selectedImages.length > 0; else imageScanEmptyState">
+                    <figure class="imagePreview" *ngFor="let image of selectedImages">
+                      <img [src]="image.previewUrl" [alt]="image.file.name" />
+                      <figcaption>
+                        <span [title]="image.file.name">{{ image.file.name }}</span>
+                        <button
+                          type="button"
+                          class="removeImageButton"
+                          (click)="removeSelectedImage(image)"
+                          aria-label="Remover imagem"
+                        >
+                          Remover
+                        </button>
+                      </figcaption>
+                    </figure>
+                    <ng-container *ngTemplateOutlet="addImageButton"></ng-container>
+                  </div>
+
+                  <ng-template #addImageButton>
+                    <button
+                      type="button"
+                      class="addImageTile"
+                      aria-label="Adicionar imagens do produto"
+                      (click)="productImageInput.click()"
+                    >+</button>
+                  </ng-template>
+
+                  <ng-template #imageScanEmptyState>
+                    <div class="imageScanEmpty">
+                      <ng-container *ngTemplateOutlet="addImageButton"></ng-container>
+                      <span>Nenhuma imagem selecionada.</span>
+                    </div>
+                  </ng-template>
+                </ng-container>
+              </div>
+
+              <div class="imageScanActions">
+                <button
+                  type="button"
+                  class="scanButton"
+                  (click)="scanProductWithImages()"
+                  [disabled]="selectedImages.length === 0 || isScanningImages"
+                >
+                  Enviar imagens e preencher
+                </button>
+              </div>
+
+              <p class="feedback feedbackError imageScanFeedback" *ngIf="hasImageScanError">
+                {{ imageScanErrorMessage }}
+              </p>
+
+              <p class="feedback feedbackSuccess imageScanFeedback" *ngIf="imageScanSuccessMessage">
+                {{ imageScanSuccessMessage }}
+              </p>
+            </section>
+
+            <div class="formGrid">
+              <label class="formField">
+                <span>Nome do produto</span>
+                <input type="text" name="nameProduct" [(ngModel)]="productForm.nameProduct" required />
+              </label>
+
+              <label class="formField">
+                <span>Tipo do produto</span>
+                <input type="text" name="typeProduct" [(ngModel)]="productForm.typeProduct" required />
+              </label>
+
+              <label class="formField formFieldWide">
+                <span>Descrição</span>
+                <textarea
+                  name="descriptionProduct"
+                  [(ngModel)]="productForm.descriptionProduct"
+                  required
+                  rows="3"
+                ></textarea>
+              </label>
+
+              <label class="formField">
+                <span>Data de criação</span>
+                <input type="date" name="dataCreatedProduct" [(ngModel)]="productForm.dataCreatedProduct" required />
+              </label>
+
+              <label class="formField">
+                <span>Data de validade</span>
+                <input type="date" name="dataDueProduct" [(ngModel)]="productForm.dataDueProduct" required />
+              </label>
+
+              <label class="formField">
+                <span>Lote</span>
+                <input type="text" name="lotProduct" [(ngModel)]="productForm.lotProduct" required />
+              </label>
+
+              <label class="formField">
+                <span>Preço de compra</span>
+                <input
+                  type="number"
+                  name="priceBuy"
+                  [ngModel]="productForm.priceBuy"
+                  (ngModelChange)="onPriceBuyChange($event)"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </label>
+
+              <label class="formField">
+                <span>Porcentagem de venda (%)</span>
+                <input
+                  type="number"
+                  name="profitPercentage"
+                  [ngModel]="profitPercentage"
+                  (ngModelChange)="onProfitPercentageChange($event)"
+                  min="0"
+                  step="0.01"
+                />
+                <small class="fieldHint">Valor salvo neste navegador.</small>
+              </label>
+
+              <label class="formField">
+                <span>Preço de venda</span>
+                <input type="number" name="priceSell" [(ngModel)]="productForm.priceSell" min="0" step="0.01" required />
+              </label>
+
+              <label class="formField">
+                <span>Estoque</span>
+                <input type="number" name="stockProduct" [(ngModel)]="productForm.stockProduct" min="0" step="1" required />
+              </label>
+            </div>
+
+            <p class="formContext">O produto será vinculado à marca e ao distribuidor selecionados.</p>
+
+            <div class="formActions">
+              <button type="submit" [disabled]="formProduct.invalid || isSaving || isScanningImages">
+                {{ isSaving ? 'Salvando...' : 'Adicionar produto' }}
+              </button>
+            </div>
+
+            <p class="feedback feedbackError" *ngIf="hasSaveError">
+              Não foi possível salvar o produto.
+            </p>
+
+            <p class="feedback feedbackSuccess" *ngIf="saveSuccessMessage">
+              {{ saveSuccessMessage }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <ul class="productList" [class.itemListGrid]="viewMode === 'grid'" aria-label="Lista de produtos">
+      <li class="emptyState" *ngIf="arrayProduct.length === 0 && !hasLoadError">
+        {{ totalProducts === 0 ? 'Nenhum produto cadastrado para esta marca.' : 'Nenhum produto encontrado para os filtros selecionados.' }}
+      </li>
+
+      <li class="productCard" *ngFor="let product of arrayProduct; trackBy: trackProduct">
+        <div class="productCardHeader">
+          <div>
+            <span class="fieldLabel">Produto</span>
+            <h3>{{ product.nameProduct || 'Produto sem nome' }}</h3>
+          </div>
+        </div>
+
+        <div class="productFields">
+          <ng-container *ngFor="let field of productFields">
+            <div class="productField">
+              <span class="fieldLabel">{{ field.label }}</span>
+
+              <ng-container *ngIf="field.editable !== false; else readonlyProductDisplay">
+                <ng-container *ngIf="isEditingField(product, field.key); else productDisplay">
+                  <ng-container *ngIf="field.control === 'textarea'; else editableProductInput">
+                    <textarea
+                      [name]="field.key + '-' + getProductId(product)"
+                      [ngModel]="getEditingValue(field.key)"
+                      (ngModelChange)="setEditingValue(field.key, $event)"
+                      rows="3"
+                    ></textarea>
+                  </ng-container>
+
+                  <ng-template #editableProductInput>
+                    <input
+                      [type]="field.type"
+                      [name]="field.key + '-' + getProductId(product)"
+                      [step]="field.step"
+                      [ngModel]="getEditingValue(field.key)"
+                      (ngModelChange)="setEditingValue(field.key, $event)"
+                    />
+                  </ng-template>
+                </ng-container>
+              </ng-container>
+
+              <ng-template #readonlyProductDisplay>
+                <span class="productValue readonlyProductValue">
+                  {{ displayProductValue(getProductValue(product, field.key)) }}
+                </span>
+              </ng-template>
+
+              <ng-template #productDisplay>
+                <span class="productValue">
+                  {{ displayProductValue(getProductValue(product, field.key)) }}
+                </span>
+              </ng-template>
+            </div>
+            <label class="productField" *ngIf="field.key === 'priceBuy' && isEditingProductValues(product)">
+              <span class="fieldLabel">Porcentagem de venda (%)</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                [ngModel]="profitPercentage"
+                (ngModelChange)="onProfitPercentageChange($event)"
+              />
+            </label>
+          </ng-container>
+        </div>
+
+        <div class="productCardActions">
+          <ng-container *ngIf="isEditingProduct(product)">
+            <button
+              *ngIf="isEditingProductDetails(product)"
+              type="button"
+              class="saveButton"
+              (click)="saveProductEdit()"
+              [disabled]="isEditing || isRegisteringNewVersion"
+            >
+              {{ isEditing ? 'Salvando...' : 'Salvar alterações' }}
+            </button>
+            <button
+              *ngIf="isEditingProductValues(product)"
+              type="button"
+              class="saveButton"
+              (click)="registerNewProductValue(product)"
+              [disabled]="!hasProductValueChanged(product) || isEditing || isRegisteringNewVersion"
+            >
+              {{ isRegisteringNewVersion ? 'Salvando...' : 'Salvar valores' }}
+            </button>
+            <button
+              type="button"
+              class="cancelButton"
+              (click)="cancelEditing()"
+              [disabled]="isEditing || isRegisteringNewVersion"
+            >
+              Cancelar
+            </button>
+          </ng-container>
+
+          <button
+            *ngIf="!isEditingProduct(product)"
+            type="button"
+            class="editButton"
+            (click)="startEditingProduct(product)"
+          >
+            Editar
+          </button>
+
+          <button
+            *ngIf="!isEditingProduct(product)"
+            type="button"
+            class="editButton"
+            (click)="registerNewProductValue(product)"
+          >
+            Editar valores e lote
+          </button>
+
+          <ng-container *ngIf="deleteConfirmationId === getProductId(product); else deleteProductButton">
+            <div class="deleteConfirmation" aria-live="polite">
+              <span class="deleteConfirmationText">
+                Tem certeza de que deseja deletar
+                <strong>{{ product.nameProduct || 'este produto' }}</strong>?
+              </span>
+              <button
+                type="button"
+                class="deleteButton"
+                (click)="deleteProduct(product)"
+                [disabled]="isProductDeleting(product) || isEditing || isRegisteringNewVersion"
+              >
+                {{ isProductDeleting(product) ? 'Deletando...' : 'Sim, deletar' }}
+              </button>
+              <button
+                type="button"
+                class="cancelButton"
+                (click)="cancelDelete()"
+                [disabled]="isProductDeleting(product) || isEditing || isRegisteringNewVersion"
+              >
+                Não
+              </button>
+            </div>
+          </ng-container>
+
+          <ng-template #deleteProductButton>
+            <button
+              type="button"
+              class="deleteButton"
+              (click)="requestDeleteProduct(product)"
+              [disabled]="isProductDeleting(product) || isEditing || isRegisteringNewVersion"
+            >
+              {{ isProductDeleting(product) ? 'Deletando...' : 'Deletar' }}
+            </button>
+          </ng-template>
+
+          <span
+            class="editSuccessMessage"
+            *ngIf="editSuccessMessage && editSuccessProductId === getProductId(product)"
+            role="status"
+          >
+            {{ editSuccessMessage }}
+          </span>
+        </div>
+      </li>
+    </ul>
+    <nav class="pagination" aria-label="Paginação dos produtos">
+      <button type="button" class="clearFilters" aria-label="Página anterior"
+        (click)="changePage(-1)" [disabled]="isLoadingPage || page === 0">← Anterior</button>
+      <span aria-live="polite">Página {{ page + 1 }}</span>
+      <button type="button" class="clearFilters" aria-label="Próxima página"
+        (click)="changePage(1)" [disabled]="isLoadingPage || !hasNextPage">Próxima →</button>
+    </nav>
+  </section>
+</ng-container>
+
+<ng-template #loadingState>
+  <section class="productSection" aria-live="polite">
+    <button type="button" class="backButton" (click)="goBack()">
+      ← Voltar para marcas
+    </button>
+    <p class="feedback">Carregando produtos...</p>
+  </section>
+</ng-template>

@@ -1,0 +1,528 @@
+:host {
+  box-sizing: border-box;
+  color: #1f2937;
+  display: block;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+.metricsSection {
+  margin: 0 auto;
+  max-width: 1580px;
+  padding: 28px 24px 40px;
+  width: 100%;
+}
+
+.metricsHeader,
+.listHeader,
+.chartHeader,
+.errorState {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+}
+
+.metricsHeader {
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.metricsEyebrow,
+.cardLabel {
+  color: #0f766e;
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.metricsHeader h2 {
+  color: #111827;
+  font-size: 1.7rem;
+  line-height: 1.2;
+  margin: 4px 0 6px;
+}
+
+.metricsHeader p {
+  color: #64748b;
+  margin: 0;
+}
+
+.selectionTrail {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.selectionTrail span {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  color: #166534;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 7px 10px;
+}
+
+.navigationActions {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+
+.backButton {
+  background: transparent;
+  border: 0;
+  color: #0f766e;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.backButton img{
+  width: 16px;
+  height: 14px;
+  margin: auto 0;
+}
+
+.backButton:hover {
+  text-decoration: underline;
+}
+
+.backButton:focus-visible,
+.listSearch input:focus-visible,
+.chartFilters select:focus-visible,
+.selectionGrid button:focus-visible,
+.errorState button:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.25);
+  outline-offset: 3px;
+}
+
+.listHeader {
+  margin: 4px 0 14px;
+}
+
+.searchControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchControls input {
+  min-width: 0;
+  flex: 1;
+}
+
+.searchControls button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.listSearch {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.listSearch label {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.listSearch input {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: inherit;
+  font: inherit;
+  min-width: 0;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.listHeader h3,
+.chartHeader h3 {
+  color: #111827;
+  margin: 0;
+}
+
+.listHeader > span,
+.productCount {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  color: #9a3412;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 7px 10px;
+}
+
+.selectionGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.selectionGrid button {
+  background: #ffffff;
+  border: 1px solid #dbe3ea;
+  border-left: 4px solid #0f766e;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(31, 41, 55, 0.07);
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  min-height: 170px;
+  padding: 20px;
+  text-align: left;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  width: 100%;
+}
+
+.selectionGrid button:hover {
+  border-color: #5eead4;
+  box-shadow: 0 14px 30px rgba(15, 118, 110, 0.13);
+  transform: translateY(-2px);
+}
+
+.selectionGrid strong {
+  color: #111827;
+  font-size: 1.12rem;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+
+.selectionGrid small {
+  color: #64748b;
+  margin-top: 5px;
+}
+
+.selectCallout {
+  color: #0f766e;
+  font-size: 0.85rem;
+  font-weight: 800;
+  margin-top: auto;
+  padding-top: 18px;
+  display: flex;
+  gap: 10px;
+}
+
+.selectCallout span{
+  margin: auto;
+}
+
+.selectCallout img{
+  width: 16px;
+  height: 14px;
+  margin: auto 0;
+}
+
+.distributorMetrics,
+.brandMetrics {
+  display: grid;
+  font-size: 0.85rem;
+  gap: 6px;
+  margin-top: 14px;
+  overflow-wrap: anywhere;
+}
+
+.feedback,
+.emptyState,
+.chartCard {
+  background: #ffffff;
+  border: 1px solid #dbe3ea;
+  border-radius: 10px;
+}
+
+.feedback,
+.emptyState {
+  color: #64748b;
+  padding: 18px;
+}
+
+.loadingState {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.loadingSpinner {
+  animation: spin 0.8s linear infinite;
+  border: 3px solid #ccfbf1;
+  border-radius: 50%;
+  border-top-color: #0f766e;
+  height: 22px;
+  width: 22px;
+}
+
+.errorState {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.errorState button {
+  background: #b91c1c;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 9px 12px;
+}
+
+.emptyState {
+  text-align: center;
+}
+
+.chartCard {
+  box-shadow: 0 10px 28px rgba(31, 41, 55, 0.07);
+  padding: 20px;
+}
+
+.chartHeader {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 16px;
+}
+
+.chartHeader h3 {
+  font-size: 1.25rem;
+  margin-top: 5px;
+}
+
+.chartLegendHelp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.chartFilters {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.chartFilters label {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.chartFilters select {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #1f2937;
+  cursor: pointer;
+  font: inherit;
+  max-width: 100%;
+  padding: 10px 12px;
+  width: min(100%, 480px);
+}
+
+.chartFilters p {
+  color: #64748b;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.chartLegendHelp span {
+  align-items: center;
+  color: #475569;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 7px;
+}
+
+.chartLegendHelp i {
+  border-top: 3px dashed;
+  display: inline-block;
+  width: 25px;
+}
+
+.columnLegend i {
+  border-top-style: solid;
+  border-top-width: 10px;
+  width: 12px;
+}
+
+.buyColor {
+  border-color: #2563eb !important;
+}
+
+.sellColor {
+  border-color: #16a34a !important;
+}
+
+.chartWrapper {
+  min-height: 420px;
+  overflow-x: auto;
+  padding-top: 8px;
+}
+
+apx-chart {
+  display: block;
+  min-width: 620px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.distributorsLayout,
+.brandsLayout {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 1fr);
+}
+
+.distributorsList,
+.distributorSummary,
+.brandsList,
+.brandSummary {
+  min-width: 0;
+}
+
+.distributorSummary .chartHeader h3 {
+  font-size: 1.1rem;
+}
+
+.donutWrapper apx-chart {
+  min-width: 0;
+}
+
+.donutBack {
+  margin-top: 16px;
+}
+
+.summaryStatus {
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.summaryTotals {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.summaryTotals button,
+.summaryTotals .profitTotal {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1d4ed8;
+  display: grid;
+  font: inherit;
+  gap: 6px;
+  padding: 14px;
+  text-align: left;
+}
+
+.summaryTotals button {
+  cursor: pointer;
+}
+
+.summaryTotals .profitTotal {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+  color: #0f766e;
+}
+
+.summaryTotals .sellTotal {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.summaryTotals strong {
+  font-size: 1.3rem;
+  overflow-wrap: anywhere;
+}
+
+.summaryTotals button:focus-visible {
+  outline: 3px solid #0f766e;
+  outline-offset: 3px;
+}
+
+.summaryTotals button:disabled {
+  cursor: default;
+}
+
+.donutBreakdown {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.donutBreakdown li {
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 10px 0;
+  overflow-wrap: anywhere;
+}
+
+.donutBreakdown i {
+  border-radius: 50%;
+  display: inline-block;
+  height: 10px;
+  margin-right: 8px;
+  width: 10px;
+}
+
+@media (max-width: 900px) {
+  .distributorsLayout,
+  .brandsLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .metricsSection {
+    padding: 20px 16px 32px;
+  }
+
+  .metricsHeader,
+  .listHeader,
+  .chartHeader,
+  .errorState {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .selectionTrail {
+    justify-content: flex-start;
+  }
+
+  .listHeader > span,
+  .productCount {
+    width: fit-content;
+  }
+}

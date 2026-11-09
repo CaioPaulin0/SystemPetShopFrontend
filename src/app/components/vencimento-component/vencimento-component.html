@@ -1,0 +1,160 @@
+<section class="dueSection" aria-labelledby="dueTitle">
+  <header class="dueHeader">
+    <div>
+      <span class="dueEyebrow">Controle de validade</span>
+      <h2 id="dueTitle">Vencimento de produtos</h2>
+      <p class="dueIntro">
+        Consulte as datas e o estoque dos produtos, com os produtos vencidos em primeiro em cada página.
+      </p>
+    </div>
+  </header>
+
+  <div class="expirationFilters" role="group" aria-label="Filtrar por vencimento">
+    <button type="button" [class.active]="selectedExpirationFilter === 'all'"
+      [attr.aria-pressed]="selectedExpirationFilter === 'all'"
+      (click)="selectExpirationFilter('all')">Todos os produtos</button>
+    <button type="button" [class.active]="selectedExpirationFilter === 'expired'"
+      [attr.aria-pressed]="selectedExpirationFilter === 'expired'"
+      (click)="selectExpirationFilter('expired')">Produtos vencidos</button>
+    <button type="button" [class.active]="selectedExpirationFilter === 'notExpired'"
+      [attr.aria-pressed]="selectedExpirationFilter === 'notExpired'"
+      (click)="selectExpirationFilter('notExpired')">Produtos não vencidos</button>
+  </div>
+
+  <div class="filterBar" aria-label="Filtros de vencimento">
+    <label>
+      Buscar produto
+      <input #productSearch type="search" placeholder="Digite o nome do produto"
+        [value]="searchTerm" (input)="searchProducts(productSearch.value)"
+        (keydown.enter)="submitSearch()">
+    </label>
+    <button class="refreshButton searchButton" type="button" (click)="submitSearch()"
+      [disabled]="isLoading || !searchTerm.trim()">Buscar</button>
+
+      <!--
+        <label>
+          Distribuidora
+          <select #distributorFilter [value]="selectedDistributorId"
+            (change)="selectDistributor(distributorFilter.value)">
+            <option value="">Todas as distribuidoras</option>
+            <option *ngFor="let distributor of distributors" [value]="getDistributorId(distributor)">
+              {{ distributor.nameDistributor }}
+            </option>
+          </select>
+        </label>
+        <label>
+          Marca
+          <select #brandFilter [value]="selectedBrandId"
+            [disabled]="!selectedDistributorId || isLoadingBrands"
+            (change)="selectBrand(brandFilter.value)">
+            <option value="">{{ isLoadingBrands ? 'Carregando marcas...' : 'Todas as marcas' }}</option>
+            <option *ngFor="let brand of brands" [value]="brand.idBrand">{{ brand.nameBrand }}</option>
+          </select>
+        </label>
+      -->
+    <button class="refreshButton" type="button" *ngIf="selectedDistributorId || selectedBrandId || searchTerm || selectedExpirationFilter !== 'all'"
+      (click)="clearFilters()">Limpar filtros</button>
+  </div>
+  <p class="dueIntro">Os filtros de distribuidora e marca são aplicados aos produtos da página atual.</p>
+  <p class="feedback feedbackError" *ngIf="filterError" role="alert">
+    {{ filterError }}
+    <button type="button" (click)="selectedDistributorId ? selectDistributor(selectedDistributorId) : loadDistributors()">
+      Tentar novamente
+    </button>
+  </p>
+  <p class="feedback" *ngIf="hasMissingFilterIds" role="status">
+    Produtos sem identificação de distribuidora ou marca aparecem apenas nos filtros compatíveis.
+    Para filtrar todos os produtos, a API precisa retornar idDistributor e idBrand.
+  </p>
+
+  <p class="feedback feedbackError" *ngIf="hasLoadError" role="alert">
+    Não foi possível carregar os produtos.
+  </p>
+
+  <p class="feedback" *ngIf="isLoading" aria-live="polite">Carregando vencimentos...</p>
+
+  <ng-container *ngIf="dueProducts$ | async as products">
+    <div class="emptyState" *ngIf="!isLoading && products.length === 0 && !hasLoadError">
+      {{ selectedDistributorId || selectedBrandId || searchTerm.trim() || selectedExpirationFilter !== 'all'
+        ? 'Nenhum produto encontrado para os filtros selecionados.'
+        : 'Nenhum produto com vencimento encontrado.' }}
+    </div>
+
+    <div class="dueList" *ngIf="products.length > 0">
+      <article
+        class="dueCard"
+        *ngFor="let product of products"
+        [class.dueCardExpired]="product.verificationStatus === 'expired'"
+        [class.dueCardNearExpiry]="product.verificationStatus === 'nearExpiry'"
+      >
+        <div class="dueCardHeader">
+          <div>
+            <span class="fieldLabel">Produto</span>
+            <h3>{{ product.nameProduct || 'Produto sem nome' }}</h3>
+          </div>
+        </div>
+
+        <div class="productFields">
+
+          <div class="productField">
+            <span class="fieldLabel">Marca</span>
+            <span class="productValue">{{ displayValue(product.nameBrand) }}</span>
+          </div>
+
+          <div class="productField">
+            <span class="fieldLabel">Distribuidora</span>
+            <span class="productValue">{{ displayValue(product.nameDistributor) }}</span>
+          </div>
+
+          <div class="productField">
+            <span class="fieldLabel">Lote</span>
+            <span class="productValue">{{ displayValue(product.lotProduct) }}</span>
+          </div>
+
+          <div class="productField">
+            <span class="fieldLabel">Data de criação do produto</span>
+            <span class="productValue">{{ formatDate(product.dataCreatedProduct) }}</span>
+          </div>
+
+          <div class="productField">
+            <span class="fieldLabel">Data de validade</span>
+            <span class="productValue">{{ formatDate(product.dataDueProduct) }}</span>
+          </div>
+
+          <div class="productField">
+            <span class="fieldLabel">Estoque</span>
+            <span class="productValue">{{ displayValue(product.stockProduct) }}</span>
+          </div>
+
+          <div class="productField">
+            <span class="fieldLabel">Vencimento confirmado</span>
+            <span class="productValue">{{ product.dataDueProductVerify ? 'Sim' : 'Não' }}</span>
+          </div>
+
+          <div class="productField">
+            <span class="fieldLabel">Data de registro</span>
+            <span class="productValue">{{ formatDate(product.dataCreated) }}</span>
+          </div>
+
+        </div>
+
+        <div
+          class="verificationMessage"
+          [class.verificationExpired]="product.verificationStatus === 'expired'"
+          [class.verificationNearExpiry]="product.verificationStatus === 'nearExpiry'"
+          aria-live="polite"
+        >
+          {{ product.verificationMessage }}
+        </div>
+      </article>
+    </div>
+  </ng-container>
+
+  <nav class="pagination" aria-label="Paginação dos vencimentos">
+    <button type="button" class="clearFilters" aria-label="Página anterior"
+      (click)="changePage(-1)" [disabled]="isLoading || page === 0">← Anterior</button>
+    <span aria-live="polite">Página {{ page + 1 }}</span>
+    <button type="button" class="clearFilters" aria-label="Próxima página"
+      (click)="changePage(1)" [disabled]="isLoading || !hasNextPage">Próxima →</button>
+  </nav>
+</section>

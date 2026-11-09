@@ -1,0 +1,20 @@
+<div>
+    <app-distributor-component
+      *ngIf="selectedDistributorId === null"
+      (distributorSelected)="openBrands($event)"
+    ></app-distributor-component>
+
+    <app-brand-component
+      *ngIf="selectedDistributorId !== null && selectedBrandId === null"
+      [idDistributor]="selectedDistributorId"
+      (back)="showDistributors()"
+      (productSelected)="openProducts($event)"
+    ></app-brand-component>
+
+    <app-product-component
+      *ngIf="selectedDistributorId !== null && selectedBrandId !== null"
+      [idBrand]="selectedBrandId"
+      [idDistributor]="selectedDistributorId"
+      (back)="showBrands()"
+    ></app-product-component>
+</div>

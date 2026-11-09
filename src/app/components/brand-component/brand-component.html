@@ -1,0 +1,272 @@
+<ng-container *ngIf="arrayBrand$ | async as arrayBrand; else loadingState">
+  <section class="brandSection" aria-labelledby="brandTitle">
+    <header class="brandHeader">
+      <div>
+        <button type="button" class="backButton" (click)="goBack()">
+          <img src="/assets/esquerda.png" alt="seta para voltar"> Voltar para distribuidores
+        </button>
+        <h2 id="brandTitle">Marcas do distribuidor - {{ distributorName || 'Não informado' }}</h2>
+      </div>
+
+      <span class="brandCount">
+        {{ arrayBrand.length }}
+        {{ arrayBrand.length === 1 ? 'marca' : 'marcas' }}
+      </span>
+    </header>
+
+    <p class="feedback feedbackError" *ngIf="hasLoadError">
+      Não foi possível carregar as marcas deste distribuidor.
+      <button type="button" (click)="loadBrands(requestedPage)">Tentar novamente</button>
+    </p>
+
+    <p class="feedback feedbackError" *ngIf="hasDeleteError">
+      Não foi possível deletar a marca. Verifique se ela possui um ID válido.
+    </p>
+
+    <p class="feedback feedbackError" *ngIf="hasEditError">
+      Não foi possível salvar as alterações da marca.
+    </p>
+
+    <p class="feedback feedbackSuccess" *ngIf="deleteResponseMessage !== null">
+      {{ deleteResponseMessage }}
+    </p>
+
+    <div class="listToolbar">
+      <div class="formField searchField">
+        <label for="brandSearch">Buscar marca pelo nome</label>
+        <div class="searchControls">
+          <input id="brandSearch" type="search" name="brandSearch"
+            placeholder="Nome da marca"
+            [ngModel]="searchTerm" (ngModelChange)="updateSearchTerm($event)"
+            (keydown.enter)="searchBrands()" />
+          <button type="button" class="searchButton"
+            (click)="searchBrands()" [disabled]="isLoadingPage || !searchTerm.trim()">Buscar</button>
+        </div>
+      </div>
+
+      <!--
+        <label class="formField typeFilter">
+          <span>Tipo da marca</span>
+          <select name="brandTypeFilter" [(ngModel)]="selectedType" (ngModelChange)="applyFilters()">
+            <option value="">Todos os tipos</option>
+            <option *ngFor="let type of brandTypes" [value]="type">{{ type }}</option>
+          </select>
+        </label>
+      -->
+
+      <div class="viewToggle" role="group" aria-label="Visualização de marcas">
+        <button type="button" [attr.aria-pressed]="viewMode === 'grid'" (click)="setViewMode('grid')">
+           <img src="/assets/grade.png" alt="grade icone">
+        </button>
+        <button type="button" [attr.aria-pressed]="viewMode === 'list'" (click)="setViewMode('list')">
+           <img src="/assets/lista.png" alt="lista icone">
+        </button>
+      </div>
+    </div>
+
+    <p class="feedback" *ngIf="searchEmpty" role="status">
+      Nenhum resultado encontrado com esse nome.
+    </p>
+    <p class="feedback" *ngIf="isLoadingPage" role="status">Carregando...</p>
+
+    <div class="filterSummary" *ngIf="!hasLoadError">
+      <button type="button" class="clearFilters" *ngIf="searchTerm || selectedType" (click)="clearFilters()">
+        Limpar filtros
+      </button>
+    </div>
+
+    <form class="brandForm" (ngSubmit)="saveBrand()" #formBrand="ngForm">
+      <h3 class="formToggleHeading">
+        <button
+          type="button"
+          class="formToggle"
+          (click)="toggleForm()"
+          [attr.aria-expanded]="isFormExpanded"
+          aria-controls="brandFormContent"
+        >
+          <span>{{ isFormExpanded ? 'Recolher cadastro de marca' : 'Adicionar marca' }}</span>
+          <span class="formToggleIcon" aria-hidden="true">{{ isFormExpanded ? '−' : '+' }}</span>
+        </button>
+      </h3>
+
+      <div
+        id="brandFormContent"
+        class="formCollapse"
+        [class.isExpanded]="isFormExpanded"
+        [attr.inert]="isFormExpanded ? null : ''"
+        [attr.aria-hidden]="!isFormExpanded"
+      >
+        <div class="formCollapseContent">
+          <div class="formCollapseBody">
+            <div class="formGrid">
+              <label class="formField">
+                <span>Nome da marca</span>
+                <input type="text" name="nameBrand" [(ngModel)]="brandForm.nameBrand" required />
+              </label>
+
+              <label class="formField">
+                <span>Tipo da marca</span>
+                <input type="text" name="typeBrand" [(ngModel)]="brandForm.typeBrand" required />
+              </label>
+            </div>
+
+            <div class="formActions">
+              <button type="submit" [disabled]="formBrand.invalid || isSaving">
+                {{ isSaving ? 'Salvando...' : 'Adicionar marca' }}
+              </button>
+            </div>
+
+            <p class="feedback feedbackError" *ngIf="hasSaveError">
+              Não foi possível salvar a marca.
+            </p>
+
+            <p class="feedback feedbackSuccess" *ngIf="saveSuccessMessage">
+              {{ saveSuccessMessage }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <ul class="brandList" [class.itemListGrid]="viewMode === 'grid'" aria-label="Lista de marcas">
+      <li class="emptyState" *ngIf="arrayBrand.length === 0 && !hasLoadError">
+        {{ totalBrands === 0 ? 'Nenhuma marca cadastrada para este distribuidor.' : 'Nenhuma marca encontrada para os filtros selecionados.' }}
+      </li>
+
+      <li class="brandCard" *ngFor="let brand of arrayBrand; trackBy: trackBrand">
+        <div class="brandCardHeader">
+        </div>
+
+        <div class="brandFields">
+          <div class="brandField">
+            <span class="fieldLabel">Nome</span>
+
+            <ng-container *ngIf="isEditingField(brand, 'nameBrand'); else nameBrandDisplay">
+              <input
+                type="text"
+                [name]="'nameBrandEdit-' + getBrandId(brand)"
+                [(ngModel)]="editingNameBrand"
+                (click)="$event.stopPropagation()"
+              />
+            </ng-container>
+
+            <ng-template #nameBrandDisplay>
+              <button
+                type="button"
+                class="brandValue brandLink"
+                (click)="openProducts(brand)"
+                aria-label="Ver produtos desta marca"
+              >
+                {{ brand.nameBrand || 'Não informado' }}
+              </button>
+            </ng-template>
+          </div>
+
+          <div class="brandField">
+            <span class="fieldLabel">Tipo</span>
+
+            <ng-container *ngIf="isEditingField(brand, 'typeBrand'); else typeBrandDisplay">
+              <input
+                type="text"
+                [name]="'typeBrandEdit-' + getBrandId(brand)"
+                [(ngModel)]="editingTypeBrand"
+                (click)="$event.stopPropagation()"
+              />
+            </ng-container>
+
+            <ng-template #typeBrandDisplay>
+              <span class="brandValue">
+                {{ brand.typeBrand || 'Não informado' }}
+              </span>
+            </ng-template>
+          </div>
+        </div>
+
+        <div class="brandCardActions">
+          <button
+            type="button"
+            class="editButton"
+            *ngIf="!isEditingBrand(brand)"
+            (click)="startEditing(brand)"
+          >
+            Editar
+          </button>
+
+          <ng-container *ngIf="isEditingBrand(brand)">
+            <button type="button" class="saveButton" (click)="saveBrandEdit()" [disabled]="isEditing">
+              {{ isEditing ? 'Salvando...' : 'Salvar alterações' }}
+            </button>
+            <button
+              type="button"
+              class="cancelButton"
+              (click)="cancelEditing()"
+              [disabled]="isEditing"
+            >
+              Cancelar
+            </button>
+          </ng-container>
+
+          <ng-container *ngIf="deleteConfirmationId === getBrandId(brand); else deleteBrandButton">
+            <div class="deleteConfirmation" aria-live="polite">
+              <span class="deleteConfirmationText">
+                Tem certeza de que deseja deletar
+                <strong>{{ brand.nameBrand || 'esta marca' }}</strong>?
+              </span>
+              <button
+                type="button"
+                class="deleteButton"
+                (click)="deleteBrand(brand)"
+                [disabled]="isBrandDeleting(brand) || isEditing"
+              >
+                {{ isBrandDeleting(brand) ? 'Deletando...' : 'Sim, deletar' }}
+              </button>
+              <button
+                type="button"
+                class="cancelButton"
+                (click)="cancelDelete()"
+                [disabled]="isBrandDeleting(brand) || isEditing"
+              >
+                Não
+              </button>
+            </div>
+          </ng-container>
+
+          <ng-template #deleteBrandButton>
+            <button
+              type="button"
+              class="deleteButton"
+              (click)="requestDeleteBrand(brand)"
+              [disabled]="isBrandDeleting(brand) || isEditing"
+            >
+              {{ isBrandDeleting(brand) ? 'Deletando...' : 'Deletar' }}
+            </button>
+          </ng-template>
+
+          <span
+            class="editSuccessMessage"
+            *ngIf="editSuccessMessage && editSuccessBrandId === getBrandId(brand)"
+            role="status"
+          >
+            {{ editSuccessMessage }}
+          </span>
+        </div>
+      </li>
+    </ul>
+    <nav class="pagination" aria-label="Paginação das marcas">
+      <button type="button" class="clearFilters" aria-label="Página anterior"
+        (click)="changePage(-1)" [disabled]="isLoadingPage || page === 0">←</button>
+      <span aria-live="polite">Página {{ page + 1 }}</span>
+      <button type="button" class="clearFilters" aria-label="Próxima página"
+        (click)="changePage(1)" [disabled]="isLoadingPage || !hasNextPage">→</button>
+    </nav>
+  </section>
+</ng-container>
+
+<ng-template #loadingState>
+  <section class="brandSection" aria-live="polite">
+    <button type="button" class="backButton" (click)="goBack()">
+      ← Voltar para distribuidores
+    </button>
+    <p class="feedback">Carregando marcas...</p>
+  </section>
+</ng-template>

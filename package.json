@@ -2,6 +2,11 @@
   "name": "system-pet-shop-front",
   "version": "0.0.0",
   "scripts": {
+    "env:generate": "node scripts/generate-env.mjs",
+    "prestart": "npm run env:generate",
+    "prebuild": "npm run env:generate",
+    "prewatch": "npm run env:generate",
+    "pretest": "npm run env:generate",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
@@ -29,6 +34,8 @@
     "@angular/forms": "^21.1.0",
     "@angular/platform-browser": "^21.1.0",
     "@angular/router": "^21.1.0",
+    "apexcharts": "^7.6.1",
+    "ng-apexcharts": "^3.1.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

@@ -1,0 +1,33 @@
+.searchControls {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.searchControls input {
+  flex: 1;
+  min-width: 0;
+}
+
+.searchControls button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.searchButton {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #0f766e;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 9px 12px;
+}
+
+.searchButton:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.25);
+  outline-offset: 2px;
+}

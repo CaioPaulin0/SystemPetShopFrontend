@@ -1,0 +1,452 @@
+<section class="metricsSection" aria-labelledby="metricsTitle">
+  <header class="metricsHeader">
+
+    
+    <div>
+      <span class="metricsEyebrow">Métricas</span>
+      <h2 id="metricsTitle">Histórico de preços dos produtos</h2>
+      <p>Selecione um distribuidor, uma marca e um produto para visualizar os dados.</p>
+    </div>
+
+    <div class="selectionTrail" *ngIf="selectedDistributor">
+      <span>{{ selectedDistributor.nameDistributor }}</span>
+      <span *ngIf="selectedBrand">{{ selectedBrand.nameBrand }}</span>
+      <span *ngIf="selectedProduct">{{ selectedProduct.product.nameProduct }}</span>
+    </div>
+  </header>
+
+  <div class="navigationActions" *ngIf="step !== 'distributors'">
+    <button
+      type="button"
+      class="backButton"
+      *ngIf="step === 'brands'"
+      (click)="showDistributors()"
+    >
+      <img src="/assets/esquerda.png" alt="icone para voltar"> Voltar para distribuidores
+    </button>
+
+    <button
+      type="button"
+      class="backButton"
+      *ngIf="step === 'products'"
+      (click)="showBrands()"
+    >
+      <img src="/assets/esquerda.png" alt="icone para voltar"> Voltar para marcas e selecionar outra
+    </button>
+
+    <button
+      type="button"
+      class="backButton"
+      *ngIf="step === 'chart'"
+      (click)="showProducts()"
+    >
+      <img src="/assets/esquerda.png" alt=""> Voltar para produtos e selecionar outro
+    </button>
+  </div>
+
+  <div class="feedback loadingState" *ngIf="step !== 'distributors' && step !== 'brands' && isLoading" role="status">
+    <span class="loadingSpinner" aria-hidden="true"></span>
+    Carregando dados...
+  </div>
+
+  <div class="feedback errorState" *ngIf="step !== 'distributors' && step !== 'brands' && hasLoadError && !isLoading" role="alert">
+    <span>Não foi possível carregar os dados. Tente novamente.</span>
+    <button type="button" (click)="retry()">Tentar novamente</button>
+  </div>
+
+  <ng-container *ngIf="step !== 'chart' || (!isLoading && !hasLoadError)">
+    <div class="distributorsLayout" *ngIf="step === 'distributors'">
+      <div class="distributorsList" [attr.aria-busy]="isLoadingDistributors">
+      <div class="listHeader">
+        <h3>Selecione uma Distribuidora</h3>
+        <span>{{ filteredDistributors.length }} disponíveis</span>
+      </div>
+
+      <div class="listSearch">
+        <label for="distributorSearch">Buscar distribuidora pelo nome</label>
+        <div class="searchControls">
+          <input id="distributorSearch" type="search" #distributorSearchInput
+            placeholder="Digite o nome da distribuidora" [value]="distributorSearch"
+            (input)="updateDistributorSearch(distributorSearchInput.value)"
+            (keydown.enter)="searchDistributors()">
+          <button type="button" class="clearFilters" (click)="searchDistributors()"
+            [disabled]="isLoadingDistributors || !distributorSearch.trim()">Buscar</button>
+        </div>
+      </div>
+
+      <div class="feedback loadingState" *ngIf="isLoadingDistributors" role="status">
+        <span class="loadingSpinner" aria-hidden="true"></span>
+        Carregando distribuidores...
+      </div>
+      <div class="feedback errorState" *ngIf="hasDistributorListError && !isLoadingDistributors" role="alert">
+        <span>Não foi possível carregar os distribuidores. Tente novamente.</span>
+        <button type="button" (click)="retry()">Tentar novamente</button>
+      </div>
+
+      <p class="emptyState" *ngIf="!isLoadingDistributors && !hasDistributorListError && distributors.length === 0">
+        Nenhum distribuidor cadastrado.
+      </p>
+      <p class="emptyState" role="status" *ngIf="distributorSearchEmpty">
+        Nenhuma distribuidora encontrada com esse nome. A lista anterior foi mantida.
+      </p>
+
+      <ul class="selectionGrid" aria-label="Distribuidores disponíveis">
+        <li *ngFor="let distributor of filteredDistributors; trackBy: trackDistributor">
+          <button type="button" [disabled]="isLoadingDistributors" (click)="selectDistributor(distributor)">
+            <span class="cardLabel">Distribuidor</span>
+            <strong>{{ distributor.nameDistributor || 'Não informado' }}</strong>
+            <small>{{ distributor.typeDistributor || 'Tipo não informado' }}</small>
+            <span
+              class="distributorMetrics"
+              *ngIf="distributorMetrics[getDistributorId(distributor)] as metrics; else metricsStatus"
+            >
+              <span>Valor de compras: <b>{{ formatCurrency(metrics.priceBuy) }}</b></span>
+              <span>Valor de vendas: <b>{{ formatCurrency(metrics.priceSell) }}</b></span>
+              <span>Lucro total: <b>{{ formatCurrency(metrics.priceSell - metrics.priceBuy) }}</b></span>
+            </span>
+            <ng-template #metricsStatus>
+              <small role="status">
+                {{ distributorMetrics[getDistributorId(distributor)] === null
+                  ? 'Métricas indisponíveis.' : 'Carregando métricas...' }}
+              </small>
+            </ng-template>
+            <span class="selectCallout">Ver marcas <img src="/assets/direita.png" alt="icone para ver produtos"></span>
+          </button>
+        </li>
+      </ul>
+      <nav class="pagination" aria-label="Paginação dos distribuidores">
+        <button type="button" class="clearFilters" aria-label="Página anterior"
+          [disabled]="isLoadingDistributors || distributorPage === 0" (click)="changeDistributorPage(-1)">← Anterior</button>
+        <span aria-live="polite">Página {{ distributorPage + 1 }}</span>
+        <button type="button" class="clearFilters" aria-label="Próxima página"
+          [disabled]="isLoadingDistributors || !hasNextDistributorPage" (click)="changeDistributorPage(1)">Próxima →</button>
+      </nav>
+      </div>
+
+      <aside class="chartCard distributorSummary" aria-labelledby="distributorSummaryTitle">
+        <div class="chartHeader">
+          <div>
+            <span class="cardLabel">Todos os distribuidores</span>
+            <h3 id="distributorSummaryTitle">{{ donutDetail
+              ? (donutDetail === 'priceBuy' ? 'Compra por distribuidor' : 'Venda por distribuidor')
+              : 'Totais de compra e venda' }}</h3>
+          </div>
+        </div>
+        <p class="summaryStatus" role="status" *ngIf="isLoadingDistributorTotals">
+          Carregando distribuidores para o gráfico...
+        </p>
+        <p class="summaryStatus" role="status" *ngIf="hasDistributorTotalsError">
+          Não foi possível carregar os totais dos distribuidores.
+          <button type="button" class="backButton" (click)="loadDistributorTotals()">Tentar novamente</button>
+        </p>
+        <p class="summaryStatus" role="status" *ngIf="pendingDistributorMetrics > 0">
+          Carregando métricas de {{ pendingDistributorMetrics }} distribuidor(es). Totais parciais.
+        </p>
+        <p class="summaryStatus" role="status" *ngIf="unavailableDistributorMetrics > 0">
+          Totais parciais: {{ unavailableDistributorMetrics }} distribuidor(es) com métricas indisponíveis.
+        </p>
+        <button class="backButton donutBack" type="button" *ngIf="donutDetail"
+          (click)="showDonutDetail(null)">
+          <img src="/assets/esquerda.png" alt="">
+          Voltar aos totais</button>
+
+        <div class="donutWrapper" *ngIf="hasDonutValues; else noDonutValues">
+          <apx-chart
+            [series]="donutSeries"
+            [chart]="donutChart"
+            [labels]="donutLabels"
+            [colors]="donutColors"
+            [plotOptions]="donutPlotOptions"
+            [legend]="donutLegend"
+            [tooltip]="donutTooltip"
+            [autoUpdateSeries]="false"
+          ></apx-chart>
+        </div>
+        <ng-template #noDonutValues>
+          <p class="emptyState">{{ isLoadingDistributorTotals || pendingDistributorMetrics > 0 ? 'Aguardando métricas...'
+            : hasDistributorTotalsError || (unavailableDistributorMetrics === chartDistributors.length && chartDistributors.length > 0)
+              ? 'Métricas indisponíveis para o gráfico.' : 'Sem valores para exibir no gráfico.' }}</p>
+        </ng-template>
+
+        <div class="summaryTotals" *ngIf="!donutDetail && !isLoadingDistributorTotals && !hasDistributorTotalsError">
+          <button type="button" (click)="showDonutDetail('priceBuy')"
+            [disabled]="!hasDonutValues" class="buyTotal">
+            <span>Total a preço de compra</span>
+            <strong>{{ formatCurrency(distributorTotals.priceBuy) }}</strong>
+            <small>Ver por distribuidor →</small>
+          </button>
+          <button type="button" (click)="showDonutDetail('priceSell')"
+            [disabled]="!hasDonutValues" class="sellTotal">
+            <span>Total a preço de venda</span>
+            <strong>{{ formatCurrency(distributorTotals.priceSell) }}</strong>
+            <small>Ver por distribuidor →</small>
+          </button>
+          <div class="profitTotal">
+            <span>Lucro total</span>
+            <strong>{{ formatCurrency(distributorTotals.priceSell - distributorTotals.priceBuy) }}</strong>
+            <small>Total de venda − total de compra</small>
+          </div>
+        </div>
+        <ul class="donutBreakdown" *ngIf="donutDetail">
+          <li *ngFor="let label of donutLabels; let index = index">
+            <span><i [style.background-color]="donutColors[index % donutColors.length]"></i>{{ label }}</span>
+            <strong>{{ formatCurrency(donutSeries[index]) }}</strong>
+          </li>
+        </ul>
+      </aside>
+    </div>
+
+    <div class="brandsLayout" *ngIf="step === 'brands'">
+      <div class="brandsList" [attr.aria-busy]="isLoadingBrands">
+      <div class="listHeader">
+        <h3>Selecione uma marca</h3>
+        <span>{{ filteredBrands.length }} disponíveis</span>
+      </div>
+
+      <div class="listSearch">
+        <label for="brandSearch">Buscar marca pelo nome</label>
+        <div class="searchControls">
+          <input id="brandSearch" type="search" #brandSearchInput
+            placeholder="Digite o nome da marca" [value]="brandSearch"
+            (input)="updateBrandSearch(brandSearchInput.value)"
+            (keydown.enter)="searchBrands()">
+          <button type="button" class="clearFilters" (click)="searchBrands()"
+            [disabled]="isLoadingBrands || !brandSearch.trim()">Buscar</button>
+        </div>
+      </div>
+
+      <div class="feedback loadingState" *ngIf="isLoadingBrands" role="status">
+        <span class="loadingSpinner" aria-hidden="true"></span>
+        Carregando marcas...
+      </div>
+      <div class="feedback errorState" *ngIf="hasBrandListError && !isLoadingBrands" role="alert">
+        <span>Não foi possível carregar as marcas. Tente novamente.</span>
+        <button type="button" (click)="retry()">Tentar novamente</button>
+      </div>
+      <p class="emptyState" *ngIf="!isLoadingBrands && !hasBrandListError && brands.length === 0">
+        Nenhuma marca cadastrada para este distribuidor.
+      </p>
+      <p class="emptyState" role="status" *ngIf="brandSearchEmpty">
+        Nenhuma marca encontrada com esse nome. A lista anterior foi mantida.
+      </p>
+
+      <ul class="selectionGrid" aria-label="Marcas disponíveis">
+        <li *ngFor="let brand of filteredBrands; trackBy: trackBrand">
+          <button type="button" [disabled]="isLoadingBrands" (click)="selectBrand(brand)">
+            <span class="cardLabel">Marca</span>
+            <strong>{{ brand.nameBrand || 'Não informada' }}</strong>
+            <small>{{ brand.typeBrand || 'Tipo não informado' }}</small>
+            <span class="brandMetrics" *ngIf="brandMetrics[brand.idBrand] as metrics; else brandMetricsStatus">
+              <span>Preço de compra: <b>{{ formatCurrency(metrics.priceBuy) }}</b></span>
+              <span>Preço de venda: <b>{{ formatCurrency(metrics.priceSell) }}</b></span>
+              <span>Lucro total: <b>{{ formatCurrency(metrics.priceSell - metrics.priceBuy) }}</b></span>
+            </span>
+            <ng-template #brandMetricsStatus>
+              <small role="status">{{ brandMetrics[brand.idBrand] === null
+                ? 'Métricas indisponíveis.' : 'Carregando métricas...' }}</small>
+            </ng-template>
+            <span class="selectCallout">Ver produtos <img src="/assets/direita.png" alt="icone para ver produto"></span>
+          </button>
+        </li>
+      </ul>
+
+      <nav class="pagination" aria-label="Paginação das marcas">
+        <button type="button" class="clearFilters" aria-label="Página anterior de marcas"
+          [disabled]="isLoadingBrands || brandPage === 0" (click)="changeBrandPage(-1)">← Anterior</button>
+        <span aria-live="polite">Página {{ brandPage + 1 }}</span>
+        <button type="button" class="clearFilters" aria-label="Próxima página de marcas"
+          [disabled]="isLoadingBrands || !hasNextBrandPage" (click)="changeBrandPage(1)">Próxima →</button>
+      </nav>
+
+      </div>
+
+      <div class="chartCard brandSummary" *ngIf="chartBrands.length > 0 || isLoadingBrandTotals || hasBrandTotalsError" aria-labelledby="brandSummaryTitle">
+        <div class="chartHeader">
+          <div>
+            <span class="cardLabel">Todas as marcas do distribuidor</span>
+            <h3 id="brandSummaryTitle">{{ selectedBrandChartType === 'column-group-labels'
+              ? 'Compra e venda por marca'
+              : brandDonutDetail
+                ? (brandDonutDetail === 'priceBuy' ? 'Compra por marca' : 'Venda por marca')
+                : 'Totais de compra e venda' }}</h3>
+          </div>
+        </div>
+        <p class="summaryStatus" role="status" *ngIf="isLoadingBrandTotals">Carregando marcas para o gráfico...</p>
+        <p class="summaryStatus" role="status" *ngIf="hasBrandTotalsError">
+          Não foi possível carregar o gráfico de marcas.
+          <button type="button" class="backButton" (click)="retryBrandTotals()">Tentar novamente</button>
+        </p>
+        <div class="chartFilters">
+          <label for="brandChartType">Tipo de gráfico</label>
+          <select id="brandChartType" #brandChartType [value]="selectedBrandChartType"
+            (change)="selectBrandChartType(brandChartType.value)" aria-describedby="brandChartHelp">
+            <option value="donut">Donut with Drilldown — totais e detalhes por marca</option>
+            <option value="column-group-labels">Column with Group Labels — colunas por marca</option>
+          </select>
+          <p id="brandChartHelp">{{ selectedBrandChartType === 'donut'
+            ? 'Clique em compra ou venda para detalhar o total por marca.'
+            : 'Compare os preços de compra e venda agrupados pelo nome de cada marca.' }}</p>
+        </div>
+        <p class="summaryStatus" role="status" *ngIf="pendingBrandMetrics > 0">
+          Carregando métricas de {{ pendingBrandMetrics }} marca(s). Totais parciais.
+        </p>
+        <p class="summaryStatus" role="status" *ngIf="unavailableBrandMetrics > 0">
+          Totais parciais: {{ unavailableBrandMetrics }} marca(s) com métricas indisponíveis.
+        </p>
+
+        <ng-container *ngIf="selectedBrandChartType === 'donut'">
+          <button class="backButton donutBack" type="button" *ngIf="brandDonutDetail"
+            (click)="showBrandDonutDetail(null)">← Voltar aos totais</button>
+          <div class="donutWrapper" *ngIf="hasBrandDonutValues; else noBrandValues">
+            <apx-chart [series]="brandDonutSeries" [chart]="brandDonutChart"
+              [labels]="brandDonutLabels" [colors]="brandDonutColors"
+              [plotOptions]="donutPlotOptions" [legend]="donutLegend" [tooltip]="donutTooltip"
+              [autoUpdateSeries]="false"></apx-chart>
+          </div>
+          <ul class="donutBreakdown" *ngIf="brandDonutDetail">
+            <li *ngFor="let label of brandDonutLabels; let index = index">
+              <span><i [style.background-color]="brandDonutColors[index % brandDonutColors.length]"></i>{{ label }}</span>
+              <strong>{{ formatCurrency(brandDonutSeries[index]) }}</strong>
+            </li>
+          </ul>
+        </ng-container>
+
+        <ng-container *ngIf="selectedBrandChartType === 'column-group-labels'">
+          <div class="chartLegendHelp columnLegend">
+            <span><i class="buyColor"></i> Preço de compra</span>
+            <span><i class="sellColor"></i> Preço de venda</span>
+          </div>
+          <div class="chartWrapper" *ngIf="hasBrandMetrics; else noBrandValues">
+            <apx-chart [style.min-width.px]="chartBrands.length * 150"
+              [series]="$any(brandColumnSeries)" [chart]="brandColumnChart"
+              [plotOptions]="brandColumnPlotOptions" [dataLabels]="dataLabels"
+              [legend]="donutLegend" [grid]="grid" [xaxis]="brandColumnXAxis"
+              [yaxis]="brandColumnYAxis" [tooltip]="donutTooltip"
+              [autoUpdateSeries]="false"></apx-chart>
+          </div>
+        </ng-container>
+        <ng-template #noBrandValues>
+          <p class="emptyState">{{ isLoadingBrandTotals || pendingBrandMetrics > 0 ? 'Aguardando métricas...'
+            : !hasBrandMetrics ? 'Métricas indisponíveis para o gráfico.' : 'Sem valores para exibir no gráfico.' }}</p>
+        </ng-template>
+        <div class="summaryTotals" *ngIf="!brandDonutDetail && !isLoadingBrandTotals && !hasBrandTotalsError">
+          <button type="button" class="buyTotal" [disabled]="!hasBrandDonutValues"
+            (click)="selectBrandChartType('donut'); showBrandDonutDetail('priceBuy')">
+            <span>Total a preço de compra</span>
+            <strong>{{ formatCurrency(brandTotals.priceBuy) }}</strong>
+            <small>Ver por marca →</small>
+          </button>
+          <button type="button" class="sellTotal" [disabled]="!hasBrandDonutValues"
+            (click)="selectBrandChartType('donut'); showBrandDonutDetail('priceSell')">
+            <span>Total a preço de venda</span>
+            <strong>{{ formatCurrency(brandTotals.priceSell) }}</strong>
+            <small>Ver por marca →</small>
+          </button>
+          <div class="profitTotal">
+            <span>Lucro total</span>
+            <strong>{{ formatCurrency(brandTotals.priceSell - brandTotals.priceBuy) }}</strong>
+            <small>Total de venda − total de compra</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="step === 'products'" [attr.aria-busy]="isLoading">
+      <div class="listHeader">
+        <h3>Selecione um produto</h3>
+        <span>
+          {{ filteredProductGroups.length }}
+          {{ filteredProductGroups.length === 1 ? 'produto' : 'produtos' }}
+        </span>
+      </div>
+
+      <div class="listSearch">
+        <label for="productSearch">Buscar produto pelo nome</label>
+        <div class="searchControls">
+          <input id="productSearch" type="search" #productSearchInput
+            placeholder="Digite o nome do produto" [value]="productSearch"
+            (input)="updateProductSearch(productSearchInput.value)"
+            (keydown.enter)="searchProducts()">
+          <button type="button" class="clearFilters" (click)="searchProducts()"
+            [disabled]="isLoading || !productSearch.trim()">Buscar</button>
+        </div>
+      </div>
+
+      <p class="emptyState" *ngIf="!isLoading && !hasLoadError && productGroups.length === 0">
+        {{ activeProductSearch ? 'Nenhum produto encontrado com esse nome.' : 'Nenhum produto encontrado para esta marca.' }}
+      </p>
+
+      <ul class="selectionGrid" aria-label="Produtos disponíveis">
+        <li *ngFor="let productGroup of filteredProductGroups; trackBy: trackProductGroup">
+          <button type="button" [disabled]="isLoading || hasLoadError" (click)="selectProduct(productGroup)">
+            <span class="cardLabel">Produto</span>
+            <strong>{{ productGroup.product.nameProduct || 'Não informado' }}</strong>
+            <small>{{ productGroup.product.typeProduct || 'Tipo não informado' }}</small>
+            <span class="selectCallout">
+               Ver métricas <img src="/assets/direita.png" alt="icone para ver métricas">
+            </span>
+          </button>
+        </li>
+      </ul>
+      <nav class="pagination" aria-label="Paginação dos produtos">
+        <button type="button" class="clearFilters" aria-label="Página anterior de produtos"
+          [disabled]="isLoading || productPage === 0" (click)="changeProductPage(-1)">← Anterior</button>
+        <span aria-live="polite">Página {{ productPage + 1 }}</span>
+        <button type="button" class="clearFilters" aria-label="Próxima página de produtos"
+          [disabled]="isLoading || !hasNextProductPage" (click)="changeProductPage(1)">Próxima →</button>
+      </nav>
+    </div>
+
+    <div class="chartCard" *ngIf="step === 'chart' && selectedProduct">
+      <div class="chartHeader">
+        <div>
+          <span class="cardLabel">Métricas do produto</span>
+          <h3>{{ selectedProduct.product.nameProduct || 'Produto não informado' }}</h3>
+        </div>
+
+      </div>
+
+      <div class="chartFilters">
+        <label for="metricsChartType">Tipo de métrica</label>
+        <select
+          id="metricsChartType"
+          #chartTypeSelect
+          [value]="selectedChartType"
+          (change)="selectChartType(chartTypeSelect.value)"
+          aria-describedby="metricsChartHelp"
+        >
+          <option *ngFor="let chartType of chartTypes" [value]="chartType.value">
+            {{ chartType.label }}
+          </option>
+        </select>
+        <p id="metricsChartHelp">
+          {{ selectedChartType === 'line'
+            ? 'Compare a evolução dos preços de compra e venda das versões nesta página.'
+            : 'Compare os preços das versões nesta página em colunas agrupadas pela data de criação.' }}
+        </p>
+      </div>
+
+      <div class="chartLegendHelp" [class.columnLegend]="selectedChartType === 'column-group-labels'">
+        <span><i class="buyColor"></i> Preço de compra</span>
+        <span><i class="sellColor"></i> Preço de venda</span>
+      </div>
+
+      <div class="chartWrapper">
+        <apx-chart
+          [series]="$any(chartSeries)"
+          [chart]="chart"
+          [colors]="chartColors"
+          [dataLabels]="dataLabels"
+          [plotOptions]="plotOptions"
+          [stroke]="stroke"
+          [markers]="markers"
+          [legend]="legend"
+          [grid]="grid"
+          [xaxis]="xaxis"
+          [yaxis]="yaxis"
+          [tooltip]="tooltip"
+        ></apx-chart>
+      </div>
+    </div>
+  </ng-container>
+</section>

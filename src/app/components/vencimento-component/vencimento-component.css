@@ -1,0 +1,271 @@
+:host {
+  box-sizing: border-box;
+  color: #1f2937;
+  display: block;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+.dueSection {
+  margin: 0 auto;
+  max-width: 1580px;
+  padding: 24px;
+  width: 100%;
+}
+
+.dueHeader,
+.dueCardHeader {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.dueHeader {
+  align-items: flex-end;
+  margin-bottom: 18px;
+}
+
+.dueEyebrow,
+.fieldLabel {
+  color: #0f766e;
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dueHeader h2,
+.dueCardHeader h3,
+.feedback {
+  margin: 0;
+}
+
+.dueHeader h2 {
+  color: #111827;
+  font-size: 1.7rem;
+  line-height: 1.2;
+  margin-top: 4px;
+}
+
+.dueIntro {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+.refreshButton {
+  background: #0f766e;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+.refreshButton:hover {
+  background: #115e59;
+}
+
+.refreshButton:disabled {
+  background: #94a3b8;
+  cursor: wait;
+}
+
+.refreshButton:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.25);
+  outline-offset: 2px;
+}
+
+.feedback,
+.emptyState {
+  background: #ffffff;
+  border: 1px solid #dbe3ea;
+  border-radius: 8px;
+  color: #6b7280;
+  padding: 14px 18px;
+}
+
+.feedbackError {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+  margin-bottom: 16px;
+}
+
+.emptyState {
+  text-align: center;
+}
+
+.expirationFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.expirationFilters button {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #374151;
+  cursor: pointer;
+  font: inherit;
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+.expirationFilters button:hover {
+  border-color: #0f766e;
+}
+
+.expirationFilters button.active {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #fff;
+  font-weight: 700;
+}
+
+.expirationFilters button:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.25);
+  outline-offset: 2px;
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.filterBar label {
+  display: grid;
+  flex: 1 1 220px;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.filterBar select,
+.filterBar input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.filterBar select:focus-visible,
+.filterBar input:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.25);
+  outline-offset: 2px;
+}
+
+.dueList {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.dueCard {
+  background: #ffffff;
+  border: 1px solid #dbe3ea;
+  border-left: 4px solid #0f766e;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(31, 41, 55, 0.08);
+  min-width: 0;
+  padding: 18px;
+}
+
+.dueCardExpired {
+  border-color: #dc2626;
+  border-left-color: #dc2626;
+}
+
+.dueCardNearExpiry {
+  border-color: #ea580c;
+  border-left-color: #ea580c;
+}
+
+.dueCardHeader {
+  align-items: flex-start;
+}
+
+.dueCardHeader h3 {
+  color: #111827;
+  font-size: 1.1rem;
+  margin-top: 4px;
+}
+
+.productFields {
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.productField {
+  min-width: 0;
+}
+
+.productValue {
+  color: #374151;
+  display: block;
+  line-height: 1.5;
+  margin-top: 4px;
+  min-height: 24px;
+  overflow-wrap: anywhere;
+}
+
+.verificationMessage {
+  border-top: 1px solid #e5e7eb;
+  color: #374151;
+  line-height: 1.5;
+  margin-top: 16px;
+  min-height: 24px;
+  padding-top: 16px;
+}
+
+.verificationExpired {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.verificationNearExpiry {
+  color: #c2410c;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .dueSection {
+    padding: 16px;
+  }
+
+  .dueHeader,
+  .dueCardHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .refreshButton {
+    width: fit-content;
+  }
+
+  .productFields {
+    grid-template-columns: 1fr;
+  }
+}
+

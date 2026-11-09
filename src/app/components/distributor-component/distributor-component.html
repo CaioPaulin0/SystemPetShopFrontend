@@ -1,0 +1,288 @@
+<ng-container *ngIf="arrayDistributor$ | async as arrayDistributor; else loadingState">
+  <section class="distributorSection" aria-labelledby="distributorTitle">
+    <header class="distributorHeader">
+      <div>
+        <span class="distributorEyebrow">Distribuidores</span>
+        <h2 id="distributorTitle">Lista de distribuidores</h2>
+      </div>
+    </header>
+
+    <p class="feedback feedbackError" *ngIf="hasLoadError">
+      Não foi possível carregar os distribuidores no momento.
+      <button type="button" (click)="loadDistributors(requestedPage)">Tentar novamente</button>
+    </p>
+
+    <p class="feedback feedbackError" *ngIf="hasDeleteError">
+      Não foi possível deletar o distribuidor. Verifique se ele possui um ID válido.
+    </p>
+
+    <span
+      class="feedback feedbackSuccess deleteFeedback"
+      *ngIf="deleteResponseMessage !== null"
+      aria-live="polite"
+    >
+      {{ deleteResponseMessage }}
+    </span>
+
+    <div class="distributorToolbar">
+      <div class="formField searchField">
+        <label for="distributorSearch">Buscar distribuidor pelo nome</label>
+        <div class="searchControls">
+          <input id="distributorSearch" type="search" name="distributorSearch"
+            placeholder="Nome do distribuidor"
+            [ngModel]="searchTerm" (ngModelChange)="updateSearchTerm($event)"
+            (keydown.enter)="searchDistributors()" />
+          <button type="button" class="searchButton"
+            (click)="searchDistributors()" [disabled]="isLoadingPage || !searchTerm.trim()">Buscar</button>
+        </div>
+      </div>
+
+      <!--
+        <label class="formField typeFilter">
+          <span>Tipo de distribuidor</span>
+          <select name="distributorTypeFilter" [(ngModel)]="selectedType" (ngModelChange)="applyFilters()">
+            <option value="">Todos os tipos</option>
+            <option *ngFor="let type of distributorTypes" [value]="type">{{ type }}</option>
+          </select>
+        </label>
+      
+      -->
+
+      <div class="viewToggle" role="group" aria-label="Visualização dos distribuidores">
+        <button type="button" [attr.aria-pressed]="viewMode === 'grid'" (click)="setViewMode('grid')">
+          <img src="/assets/grade.png" alt="grade icone">
+        </button>
+        <button type="button" [attr.aria-pressed]="viewMode === 'list'" (click)="setViewMode('list')">
+          <img src="/assets/lista.png" alt="grade icone">
+        </button>
+      </div>
+    </div>
+
+    <p class="feedback" *ngIf="searchEmpty" role="status">
+      Nenhum resultado encontrado com esse nome.
+    </p>
+    <p class="feedback" *ngIf="isLoadingPage" role="status">Carregando...</p>
+
+    <div class="filterSummary" *ngIf="!hasLoadError">
+      <button type="button" class="clearFilters" *ngIf="searchTerm || selectedType" (click)="clearFilters()">
+        Limpar filtros
+      </button>
+    </div>
+
+    <form class="distributorForm" (ngSubmit)="saveDistributor()" #formDistributor="ngForm">
+      <h3 class="formToggleHeading">
+        <button
+          type="button"
+          class="formToggle"
+          (click)="toggleForm()"
+          [attr.aria-expanded]="isFormExpanded"
+          aria-controls="distributorFormContent"
+        >
+          <span>{{ isFormExpanded ? 'Recolher cadastro de distribuidor' : 'Adicionar distribuidora' }}</span>
+          <span class="formToggleIcon" aria-hidden="true">{{ isFormExpanded ? '−' : '+' }}</span>
+        </button>
+      </h3>
+
+      <div
+        id="distributorFormContent"
+        class="formCollapse"
+        [class.isExpanded]="isFormExpanded"
+        [attr.inert]="isFormExpanded ? null : ''"
+        [attr.aria-hidden]="!isFormExpanded"
+      >
+        <div class="formCollapseContent">
+          <div class="formCollapseBody">
+            <div class="formGrid">
+
+                <label class="formField">
+                  <span>Nome</span>
+                  <input
+                    type="text"
+                    name="nameDistributor"
+                    [(ngModel)]="distributorForm.nameDistributor"
+                    required
+                  />
+                </label>
+              
+
+
+              <label class="formField">
+                <span>Localização</span>
+                <input
+                  type="text"
+                  name="localizationDistributor"
+                  [(ngModel)]="distributorForm.localizationDistributor"
+                  required
+                />
+              </label>
+
+              <label class="formField">
+                <span>Tipo</span>
+                <input
+                  type="text"
+                  name="typeDistributor"
+                  [(ngModel)]="distributorForm.typeDistributor"
+                  required
+                />
+              </label>
+
+              <label class="formField">
+                <span>CNPJ</span>
+                <input type="text" name="CNPJ" [(ngModel)]="distributorForm.CNPJ" required />
+              </label>
+
+              <label class="formField formFieldWide">
+                <span>Vendedores</span>
+                <textarea
+                  name="salespeopleDistributor"
+                  [(ngModel)]="salespeopleInput"
+                  rows="3"
+                ></textarea>
+              </label>
+
+              <label class="formField formFieldWide">
+                <span>Telefones</span>
+                <textarea name="telephones" [(ngModel)]="telephonesInput" rows="3"></textarea>
+              </label>
+            </div>
+
+            <div class="formActions">
+              <button type="submit" [disabled]="formDistributor.invalid || isSaving">
+                {{ isSaving ? 'Salvando...' : 'Adicionar distribuidor' }}
+              </button>
+            </div>
+
+            <p class="feedback feedbackError" *ngIf="hasSaveError">
+              Não foi possível salvar o distribuidor.
+            </p>
+
+            <p class="feedback feedbackSuccess" *ngIf="saveSuccessMessage">
+              {{ saveSuccessMessage }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <ul class="distributorList" [class.distributorListGrid]="viewMode === 'grid'" aria-label="Lista de distribuidores">
+      <li class="emptyState" *ngIf="arrayDistributor.length === 0 && !hasLoadError">
+        {{ totalDistributors === 0 ? 'Nenhum distribuidor cadastrado.' : 'Nenhum distribuidor encontrado para os filtros selecionados.' }}
+      </li>
+
+      <li
+        class="distributorCard"
+        *ngFor="let distributor of arrayDistributor; trackBy: trackDistributor"
+      >
+        <div class="distributorCardHeader">
+          <div>
+            <span class="fieldLabel">Nome</span>
+            <button
+              type="button"
+              class="distributorName distributorNameButton"
+              (click)="openBrands(distributor)"
+            >
+              {{ distributor.nameDistributor || 'Não informado' }}
+            </button>
+          </div>
+
+          <span class="typeBadge">{{ distributor.typeDistributor || 'Tipo não informado' }}</span>
+        </div>
+
+        <div class="distributorDetails">
+          <div class="detailItem">
+            <span class="fieldLabel">Localização</span>
+            <p>{{ distributor.localizationDistributor || 'Não informada' }}</p>
+          </div>
+
+          <div class="detailItem">
+            <span class="fieldLabel">CNPJ</span>
+            <p>{{ getDistributorCnpj(distributor) || 'Não informado' }}</p>
+          </div>
+        </div>
+
+        <div class="contactGroups">
+          <div class="contactGroup">
+            <span class="fieldLabel">Vendedores</span>
+            <ul
+              class="tagList"
+              *ngIf="hasItems(distributor.salespeopleDistributor); else noSalespeople"
+            >
+              <li *ngFor="let salesperson of distributor.salespeopleDistributor">
+                {{ formatItem(salesperson) }}
+              </li>
+            </ul>
+
+            <ng-template #noSalespeople>
+              <p class="mutedText">Nenhum vendedor informado.</p>
+            </ng-template>
+          </div>
+
+          <div class="contactGroup">
+            <span class="fieldLabel">Telefones</span>
+            <ul class="tagList phoneList" *ngIf="hasItems(distributor.telephones); else noPhones">
+              <li *ngFor="let telephone of distributor.telephones">
+                {{ formatItem(telephone) }}
+              </li>
+            </ul>
+
+            <ng-template #noPhones>
+              <p class="mutedText">Nenhum telefone informado.</p>
+            </ng-template>
+          </div>
+        </div>
+
+        <div class="distributorCardActions">
+          <ng-container
+            *ngIf="deleteConfirmationId === getDistributorId(distributor); else deleteDistributorButton"
+          >
+            <div class="deleteConfirmation" aria-live="polite">
+              <span class="deleteConfirmationText">
+                Tem certeza de que deseja deletar
+                <strong>{{ distributor.nameDistributor || 'este distribuidor' }}</strong>?
+              </span>
+              <button
+                type="button"
+                class="deleteButton"
+                (click)="deleteDistributor(distributor)"
+                [disabled]="isDistributorDeleting(distributor)"
+              >
+                {{ isDistributorDeleting(distributor) ? 'Deletando...' : 'Sim, deletar' }}
+              </button>
+              <button
+                type="button"
+                class="cancelDeleteButton"
+                (click)="cancelDelete()"
+                [disabled]="isDistributorDeleting(distributor)"
+              >
+                Não
+              </button>
+            </div>
+          </ng-container>
+
+          <ng-template #deleteDistributorButton>
+            <button
+              type="button"
+              (click)="requestDeleteDistributor(distributor)"
+              [disabled]="isDistributorDeleting(distributor)"
+            >
+              {{ isDistributorDeleting(distributor) ? 'Deletando...' : 'Deletar' }}
+            </button>
+          </ng-template>
+        </div>
+      </li>
+    </ul>
+    <nav class="pagination" aria-label="Paginação dos distribuidores">
+      <button type="button" aria-label="Página anterior" (click)="changePage(-1)"
+        [disabled]="isLoadingPage || page === 0">←</button>
+      <span aria-live="polite">Página {{ page + 1 }}</span>
+      <button type="button" aria-label="Próxima página" (click)="changePage(1)"
+        [disabled]="isLoadingPage || !hasNextPage">→</button>
+    </nav>
+  </section>
+</ng-container>
+
+<ng-template #loadingState>
+  <section class="distributorSection" aria-live="polite">
+    <p class="feedback">Carregando distribuidores...</p>
+  </section>
+</ng-template>
