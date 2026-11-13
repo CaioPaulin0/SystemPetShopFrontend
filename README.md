@@ -1,5 +1,5 @@
 # System Pet Shop — Frontend
-
+<a href="https://github.com/CaioPaulin0/SystemPetShop">Link do repositório do backend</a> </br>
 Aplicação web para organizar distribuidores, marcas e produtos de um pet shop, acompanhar vencimentos e consultar métricas e histórico de preços. Desenvolvida com Angular e integrada a uma API HTTP.
 
 O fluxo principal de cadastro segue a hierarquia **Distribuidor → Marca → Produto**. A interface está dividida nas abas **Cadastro**, **Vencimento** e **Métricas**.
